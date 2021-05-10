@@ -30,13 +30,15 @@ async function startBasicCall() {
     console.log("publish success!");
 
     for(const user of client.remoteUsers) {
-        subscribeToNewUser(user)
+        subscribeToNewUser(client, user)
     }
 
     client.on("user-published", async (user, mediaType) => {
-        subscribeToNewUser(user);
+        subscribeToNewUser(client, user);
 
-        client.on("user-unpublished", user => {
+        client.on("user-unpublished", async (user) => {
+            const mediaType = user.hasVideo ? "video" : "audio";
+            await client.unsubscribe(user, mediaType);
             const remotePlayerContainer = document.getElementById(user.uid);
             remotePlayerContainer.remove();
         });
@@ -44,7 +46,7 @@ async function startBasicCall() {
     });
 }
 
-async function subscribeToNewUser(user){
+async function subscribeToNewUser(client, user){
     const mediaType = user.hasVideo ? "video" : "audio";
 
     await client.subscribe(user, mediaType);
