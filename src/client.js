@@ -29,26 +29,21 @@ async function startBasicCall() {
     rtc.localVideoTrack.play(localPlayerContainer);
     console.log("publish success!");
 
-    for(const user of client.remoteUsers) {
-        subscribeToNewUser(client, user)
+    for(var user of client.remoteUsers) {
+        if(user.uid != options.uid) subscribeToNewUser(client, user);
     }
 
     client.on("user-published", async (user, mediaType) => {
-        subscribeToNewUser(client, user);
-
-        client.on("user-unpublished", async (user) => {
-            const mediaType = user.hasVideo ? "video" : "audio";
-            await client.unsubscribe(user, mediaType);
-            const remotePlayerContainer = document.getElementById(user.uid);
-            remotePlayerContainer.remove();
-        });
-
+        subscribeToNewUser(client, user, mediaType);
+    });
+    client.on("user-unpublished", async (user, mediaType) => {
+        await client.unsubscribe(user, mediaType);
+        const remotePlayerContainer = document.getElementById(user.uid);
+        remotePlayerContainer.remove();
     });
 }
 
-async function subscribeToNewUser(client, user){
-    const mediaType = user.hasVideo ? "video" : "audio";
-
+async function subscribeToNewUser(client, user, mediaType){
     await client.subscribe(user, mediaType);
     console.log("subscribe success");
 
