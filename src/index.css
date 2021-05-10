@@ -1,8 +1,8 @@
 * {
-  box-sizing: border-box
+  box-sizing: border-box;
 }
 
-body,html {
+body {
   height: 100%;
   font-family: Arial, Helvetica, sans-serif;
   text-align: center;
@@ -15,10 +15,14 @@ h1{
 }
 
 #video-grid {
+  margin: auto;
+}
+
+.video-container {
+  margin: 30px;
   display: inline-block;
 }
 
 video {
-  border: green 2px solid;
-  object-fit: cover;
+  border: green 3px solid;
 }

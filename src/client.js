@@ -23,8 +23,9 @@ async function startBasicCall() {
     rtc.localVideoTrack = await AgoraRTC.createCameraVideoTrack();
 
     const localPlayerContainer = document.createElement("div");
-    localPlayerContainer.textContent = "Me " + options.uid.toString();
+    localPlayerContainer.textContent = "ME-" + options.uid.toString();
     localPlayerContainer.id = options.uid;
+    localPlayerContainer.className = "video-container";
     localPlayerContainer.style.width = "320px";
     localPlayerContainer.style.height = "240px";
     document.getElementById('video-grid').appendChild(localPlayerContainer);
@@ -60,8 +61,9 @@ async function subscribe(user, mediaType) {
     if (mediaType === 'video') {
         const remoteVideoTrack = user.videoTrack;
         const remotePlayerContainer = document.createElement("div");
-        remotePlayerContainer.textContent = "Remote user " + uid.toString();
+        remotePlayerContainer.textContent = "USER-" + uid.toString();
         remotePlayerContainer.id = uid;
+        remotePlayerContainer.className = "video-container";
         remotePlayerContainer.style.width = "320px";
         remotePlayerContainer.style.height = "240px";
         document.getElementById('video-grid').appendChild(remotePlayerContainer);
@@ -84,4 +86,4 @@ function handleUserUnpublished(user) {
     document.getElementById(id).remove();
 }
 
-startBasicCall()
+startBasicCall();
