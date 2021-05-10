@@ -1,3 +1,5 @@
+var remoteUsers = {};
+
 var rtc = {
     localAudioTrack: null,
     localVideoTrack: null,
@@ -10,11 +12,13 @@ var options = {
     uid: null
 };
 
-async function startBasicCall() {
-    const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
-    await client.join(options.appId, options.channel, options.token, null);
-    options.uid = client._uid;
+async function startBasicCall() {
+    client.on("user-published", handleUserPublished);
+    client.on("user-unpublished", handleUserUnpublished);
+
+    options.uid = await client.join(options.appId, options.channel, options.token, null);
     rtc.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
     rtc.localVideoTrack = await AgoraRTC.createCameraVideoTrack();
 
@@ -24,40 +28,60 @@ async function startBasicCall() {
     localPlayerContainer.style.width = "320px";
     localPlayerContainer.style.height = "240px";
     document.getElementById('video-grid').appendChild(localPlayerContainer);
+    rtc.localVideoTrack.play(localPlayerContainer);
 
     await client.publish([rtc.localAudioTrack, rtc.localVideoTrack]);
-    rtc.localVideoTrack.play(localPlayerContainer);
     console.log("publish success!");
-
-    for(var user of client.remoteUsers) {
-        if(user.uid != options.uid) subscribeToNewUser(client, user);
-    }
-
-    client.on("user-published", async (user, mediaType) => {
-        subscribeToNewUser(client, user, mediaType);
-    });
-    client.on("user-unpublished", async (user, mediaType) => {
-        await client.unsubscribe(user, mediaType);
-        const remotePlayerContainer = document.getElementById(user.uid);
-        remotePlayerContainer.remove();
-    });
 }
 
-async function subscribeToNewUser(client, user, mediaType){
+async function leave() {
+    for (trackName in rtc) {
+        var track = rtc[trackName];
+        if(track) {
+            track.stop();
+            track.close();
+            rtc[trackName] = undefined;
+        }
+    }
+    // Remove remote users and player views.
+    remoteUsers = {};
+
+    // leave the channel
+    await client.leave();
+    console.log("client leaves channel success");
+}
+
+async function subscribe(user, mediaType) {
+    const uid = user.uid;
+    // subscribe to a remote user
     await client.subscribe(user, mediaType);
     console.log("subscribe success");
 
-    const remoteVideoTrack = user.videoTrack;
-    const remoteAudioTrack = user.audioTrack;
-    const remotePlayerContainer = document.createElement("div");
-    remotePlayerContainer.textContent = "Remote user " + user.uid.toString();
-    remotePlayerContainer.id = user.uid;
-    remotePlayerContainer.style.width = "320px";
-    remotePlayerContainer.style.height = "240px";
-    document.getElementById('video-grid').appendChild(remotePlayerContainer);
-    
-    if (mediaType === "video") remoteVideoTrack.play(remotePlayerContainer);
-    if (mediaType === "audio") remoteAudioTrack.play();
+    if (mediaType === 'video') {
+        const remoteVideoTrack = user.videoTrack;
+        const remotePlayerContainer = document.createElement("div");
+        remotePlayerContainer.textContent = "Remote user " + uid.toString();
+        remotePlayerContainer.id = uid;
+        remotePlayerContainer.style.width = "320px";
+        remotePlayerContainer.style.height = "240px";
+        document.getElementById('video-grid').appendChild(remotePlayerContainer);
+        remoteVideoTrack.play(remotePlayerContainer);
+    }
+    if (mediaType === 'audio') {
+      user.audioTrack.play();
+    }
+}
+
+function handleUserPublished(user, mediaType) {
+    const id = user.uid;
+    remoteUsers[id] = user;
+    subscribe(user, mediaType);
+}
+
+function handleUserUnpublished(user) {
+    const id = user.uid;
+    delete remoteUsers[id];
+    document.getElementById(id).remove();
 }
 
 startBasicCall()
