@@ -7,18 +7,43 @@ var rtc = {
 
 var options = {
     appId: "ca8a9f02e5654d25bbaf716ce2beb024",
-    channel: "deneme",
-    token: "006ca8a9f02e5654d25bbaf716ce2beb024IAA7uUz5XxZLe4ZZigkjlTGKbfxryNvwBkft4vQzQp/VpBQdGwsAAAAAEADn5pQIC6aaYAEAAQALpppg",
+    channel: "GENEL",
+    token: null,
     uid: null
 };
 
 const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
+function fetchToken(uid, channelName, tokenRole) {
+
+    return new Promise(function (resolve) {
+        axios.post('https://agora-token-api.herokuapp.com/rtctoken', {
+            uid: uid,
+            channelName: channelName,
+            role: tokenRole
+        }, {
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            }
+        })
+            .then(function (response) {
+                const token = response.data.token;
+                resolve(token);
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    })
+}
+
 async function startBasicCall() {
     client.on("user-published", handleUserPublished);
     client.on("user-unpublished", handleUserUnpublished);
 
-    options.uid = await client.join(options.appId, options.channel, options.token, null);
+    options.uid = Math.floor(100000*Math.random(Date.now()));
+    options.token= await fetchToken(options.uid, options.channel, 1);
+
+    await client.join(options.appId, options.channel, options.token, options.uid);
     rtc.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
     rtc.localVideoTrack = await AgoraRTC.createCameraVideoTrack();
 
