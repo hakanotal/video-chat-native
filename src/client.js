@@ -6,7 +6,7 @@ var rtc = {
 };
 
 var options = {
-    appId: "ca8a9f02e5654d25bbaf716ce2beb024",
+    appId: "fa74f31c70d643bd8ec516fbbbe4dddc",
     channel: "GENEL",
     token: null,
     uid: null
